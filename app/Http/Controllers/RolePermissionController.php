@@ -130,7 +130,6 @@ class RolePermissionController extends Controller
             ], 500);
         }
     }
-
     public function update(Request $request, string $id){
             try {
                 $request->validate([
@@ -207,7 +206,8 @@ class RolePermissionController extends Controller
                 ], 500);
             }
         }
-    public function destroy(string $id){
+    public function destroy(string $id)
+    {
         try {
             $role = Role::findOrFail($id);
             $role->delete();
