@@ -131,8 +131,83 @@ class RolePermissionController extends Controller
         }
     }
 
-    public function destroy(string $id)
-    {
+    public function update(Request $request, string $id){
+            try {
+                $request->validate([
+                    'name' => 'required|string|max:255',
+                    'permisions' => 'required|array|min:1',
+                    'permisions.*' => 'required|string'
+                ]);
+
+                $role = Role::findOrFail($id);
+                
+                $IS_ROLE = Role::where("name", $request->name)
+                            ->where("id", "<>", $id)
+                            ->where('guard_name', 'api')
+                            ->first();
+
+                if ($IS_ROLE) {
+                    return response()->json([
+                        "message" => 403,
+                        "message_text" => "EL ROL YA EXISTE"
+                    ], 403);
+                }
+
+                $role->name = $request->name;
+                $role->save();
+
+                $validPermissions = [];
+                foreach ($request->permisions as $permision) {
+                    $permission = Permission::where('name', $permision)
+                                        ->where('guard_name', 'api')
+                                        ->first();
+
+                    if ($permission) {
+                        $validPermissions[] = $permission;
+                    } else {
+                        Log::warning("Permiso no encontrado: $permision");
+                    }
+                }
+
+                if (empty($validPermissions)) {
+                    return response()->json([
+                        "message" => 404,
+                        "message_text" => "No se encontraron permisos válidos."
+                    ], 404);
+                }
+
+                // Sincronizar permisos (reemplaza los existentes)
+                $role->syncPermissions($validPermissions);
+
+                return response()->json([
+                    "message" => 200,
+                    "message_text" => "Rol actualizado correctamente",
+                    "role" => [
+                        "id" => $role->id,
+                        "name" => $role->name,
+                        "permissions" => $role->permissions,
+                        "permission_pluck" => $role->permissions->pluck("name"),
+                        "created_at" => $role->created_at->format("Y-m-d h:i A"),
+                    ]
+                ]);
+
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return response()->json([
+                    "message" => 422,
+                    "message_text" => "Datos de validación incorrectos",
+                    "errors" => $e->errors()
+                ], 422);
+                
+            } catch (\Exception $e) {
+                Log::error('Error al actualizar rol: ' . $e->getMessage());
+                
+                return response()->json([
+                    "message" => 500,
+                    "message_text" => "Error interno del servidor: " . $e->getMessage()
+                ], 500);
+            }
+        }
+    public function destroy(string $id){
         try {
             $role = Role::findOrFail($id);
             $role->delete();
