@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\userAccessController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,9 +37,9 @@ Route::group([
 
 
 Route::group([
- 
     //'middleware' => 'auth:api', 
 ], function ($router) {
     Route::resource("roles", RolePermissionController::class);
+    Route::post('/users/{id}', [UserAccessController::class, 'update']);
+    Route::resource("users", userAccessController::class);
 });
-
