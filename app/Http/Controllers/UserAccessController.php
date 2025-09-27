@@ -43,6 +43,11 @@ class userAccessController extends Controller
         ]);
     }
 
+    public function config(){
+        return response()->json([
+            "roles" => Role::all(),
+        ]);
+    }
     /**
      * Store a newly created resource in storage.
      */
